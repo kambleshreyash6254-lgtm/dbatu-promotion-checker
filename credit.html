@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DBATU Student Promotion Checker</title>
+<style>
+  :root {
+    --blue: #2a5298; --purple: #6a11cb; --pink: #e83e8c;
+    --green: #17a34a; --red: #dc2626; --ink: #1f2937; --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 22px 14px 40px;
+    font-family: 'Segoe UI', system-ui, Arial, sans-serif; color: var(--ink);
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #6a11cb 100%) fixed;
+  }
+  .wrap { max-width: 580px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; color: #fff; margin: 6px 0 22px; }
+  .logo {
+    width: 72px; height: 72px; margin: 0 auto 12px; border-radius: 20px;
+    background: rgba(255,255,255,.18); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; font-size: 38px;
+    border: 1px solid rgba(255,255,255,.3);
+  }
+  .badge {
+    display: inline-block; background: rgba(255,255,255,.16); padding: 6px 14px;
+    border-radius: 20px; font-size: 11px; letter-spacing: 1.2px; font-weight: 600;
+  }
+  .header h1 { margin: 12px 0 6px; font-size: 29px; line-height: 1.2; }
+  .header p { margin: 0 auto; max-width: 440px; font-size: 14px; opacity: .88; line-height: 1.55; }
+
+  /* Progress steps */
+  .steps { display: flex; justify-content: space-between; margin: 0 6px 18px; position: relative; }
+  .steps::before {
+    content: ""; position: absolute; top: 15px; left: 8%; right: 8%;
+    height: 3px; background: rgba(255,255,255,.3); z-index: 0;
+  }
+  .step { z-index: 1; text-align: center; color: rgba(255,255,255,.7); font-size: 12px; flex: 1; }
+  .step .dot {
+    width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 5px;
+    background: #5b79b8; color: #fff; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; transition: .3s;
+  }
+  .step.on { color: #fff; font-weight: 600; }
+  .step.on .dot { background: #fff; color: var(--purple); box-shadow: 0 0 0 5px rgba(255,255,255,.25); }
+
+  /* Cards */
+  .card {
+    background: #fff; border-radius: 20px; padding: 22px; margin-bottom: 18px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.25); animation: rise .45s ease;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .card h3 { margin: 0 0 4px; font-size: 18px; }
+  .card .hint { margin: 0 0 16px; font-size: 13px; color: var(--muted); }
+
+  /* Year buttons */
+  .years { display: grid; gap: 12px; }
+  .year {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px; cursor: pointer;
+    border: 2px solid #e5e9f4; border-radius: 14px; background: #f8faff; transition: .2s;
+  }
+  .year:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .year .ico {
+    width: 46px; height: 46px; border-radius: 12px; font-size: 22px;
+    display: flex; align-items: center; justify-content: center; color: #fff;
+    background: linear-gradient(135deg, var(--blue), var(--purple)); flex-shrink: 0;
+  }
+  .year b { display: block; font-size: 15.5px; }
+  .year small { color: var(--muted); font-size: 12.5px; }
+  .year .pct {
+    margin-left: auto; font-weight: 700; font-size: 15px; color: var(--purple);
+    background: #efe6ff; padding: 5px 10px; border-radius: 20px; flex-shrink: 0;
+  }
+  .year.active { border-color: var(--purple); background: #f6f0ff; box-shadow: 0 6px 18px rgba(106,17,203,.22); }
+
+  /* Rule box */
+  .rule {
+    display: flex; gap: 10px; background: #eef3ff; border-left: 4px solid var(--blue);
+    padding: 11px 13px; border-radius: 10px; font-size: 13.5px; margin-bottom: 16px; line-height: 1.5;
+  }
+
+  /* Semester inputs */
+  .sem {
+    display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 10px;
+    border: 2px solid #e5e9f4; border-radius: 14px; background: #fbfcff; transition: .2s;
+  }
+  .sem:focus-within { border-color: var(--purple); background: #fff; }
+  .sem .tag {
+    width: 52px; height: 52px; border-radius: 12px; flex-shrink: 0; text-align: center;
+    background: linear-gradient(135deg, #e3ebff, #f0e6ff); color: var(--blue);
+    display: flex; flex-direction: column; justify-content: center; font-size: 11px; font-weight: 600;
+  }
+  .sem .tag strong { font-size: 19px; line-height: 1; }
+  .sem .mid { flex: 1; min-width: 0; }
+  .sem .mid span { font-size: 12px; color: var(--muted); }
+  .sem input {
+    width: 100%; margin-top: 4px; padding: 9px 10px; font-size: 17px; font-weight: 600;
+    border: 2px solid #e5e9f4; border-radius: 10px; outline: none; background: #fff;
+  }
+  .sem input:focus { border-color: var(--purple); }
+  .sem .max { font-size: 14px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+  .live {
+    display: flex; justify-content: space-between; align-items: center; margin: 14px 2px 4px;
+    font-size: 14px; color: var(--muted);
+  }
+  .live b { color: var(--ink); font-size: 17px; }
+
+  .btn {
+    width: 100%; padding: 15px; margin-top: 10px; font-size: 16.5px; font-weight: 700;
+    color: #fff; border: 0; border-radius: 14px; cursor: pointer; transition: .2s;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(106,17,203,.4); }
+  .btn.ghost { background: #eef1f8; color: var(--blue); }
+  .btn.ghost:hover { box-shadow: none; background: #e3e8f5; }
+
+  /* Result */
+  .result { text-align: center; }
+  .ring-wrap { position: relative; width: 150px; height: 150px; margin: 4px auto 10px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { stroke: #e8ebf4; }
+  .ring-fg { transition: stroke-dashoffset 1.2s ease; stroke-linecap: round; }
+  .ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-text b { font-size: 28px; }
+  .ring-text span { font-size: 12px; color: var(--muted); }
+  .verdict { margin: 6px 0 4px; font-size: 23px; }
+  .pass .verdict { color: var(--green); }
+  .fail .verdict { color: var(--red); }
+  .err .verdict { color: #b45309; }
+  .msg { font-size: 14.5px; line-height: 1.6; color: #4b5563; margin: 6px 0 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 8px; }
+  .stat { background: #f4f6fb; border-radius: 12px; padding: 12px 4px; }
+  .stat b { display: block; font-size: 19px; }
+  .stat span { font-size: 12px; color: var(--muted); }
+
+  .bar { position: relative; height: 14px; background: #e8ebf4; border-radius: 10px; margin: 34px 0 10px; }
+  .fill { height: 100%; width: 0; border-radius: 10px; transition: width 1.2s ease; }
+  .pass .fill { background: linear-gradient(90deg, #4ade80, var(--green)); }
+  .fail .fill { background: linear-gradient(90deg, #fca5a5, var(--red)); }
+  .mark { position: absolute; top: -7px; width: 3px; height: 28px; background: var(--ink); border-radius: 2px; }
+  .mark-lbl {
+    position: absolute; top: -30px; transform: translateX(-50%); font-size: 11px;
+    font-weight: 600; background: var(--ink); color: #fff; padding: 2px 8px; border-radius: 8px; white-space: nowrap;
+  }
+
+  .table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
+  .table th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 4px; border-bottom: 2px solid #eef1f8; }
+  .table td { padding: 7px 4px; border-bottom: 1px solid #f1f3f9; }
+  .table td:last-child, .table th:last-child { text-align: right; }
+
+  .footer { text-align: center; color: rgba(255,255,255,.75); font-size: 12px; margin-top: 8px; line-height: 1.6; }
+
+  /* Confetti */
+  .confetti { position: fixed; top: -30px; font-size: 22px; pointer-events: none; z-index: 99; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .9; } }
+
+  @media (max-width: 420px) {
+    .header h1 { font-size: 24px; }
+    .year .pct { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🎓</div>
+    <span class="badge">DR. BABASAHEB AMBEDKAR TECHNOLOGICAL UNIVERSITY</span>
+    <h1>DBATU Student Promotion Checker</h1>
+    <p>Find out in seconds whether you are eligible for promotion to the next year, based on the credits you have earned.</p>
+  </div>
+
+  <!-- Step indicator -->
+  <div class="steps">
+    <div class="step on" id="s1"><div class="dot">1</div>Select year</div>
+    <div class="step" id="s2"><div class="dot">2</div>Enter credits</div>
+    <div class="step" id="s3"><div class="dot">3</div>Result</div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card">
+    <h3>Which year have you completed?</h3>
+    <p class="hint">Tap your completed year to continue.</p>
+    <div class="years">
+      <div class="year" id="y1" onclick="selectYear(1)">
+        <div class="ico">1️⃣</div>
+        <div><b>First Year</b><small>Promotion to Second Year</small></div>
+        <div class="pct">60%</div>
+      </div>
+      <div class="year" id="y2" onclick="selectYear(2)">
+        <div class="ico">2️⃣</div>
+        <div><b>Second Year</b><small>Promotion to Third Year</small></div>
+        <div class="pct">80%</div>
+      </div>
+      <div class="year" id="y3" onclick="selectYear(3)">
+        <div class="ico">3️⃣</div>
+        <div><b>Third Year</b><small>Promotion to Fourth Year</small></div>
+        <div class="pct">86%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card" id="inputCard" style="display:none">
+    <h3>Enter the credits you earned</h3>
+    <p class="hint">Type your earned credits for each semester. Total credits are already filled in.</p>
+    <div class="rule" id="ruleBox"></div>
+    <div id="semRows"></div>
+    <div class="live"><span>Running total</span><span><b id="liveEarned">0</b> / <span id="liveTotal">0</span> credits</span></div>
+    <button class="btn" onclick="calculate()">Check My Result</button>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="card" id="resultCard" style="display:none">
+    <div id="resultBox" class="result"></div>
+    <button class="btn ghost" onclick="resetAll()">Check Again</button>
+  </div>
+
+  <div class="footer">
+    Always confirm your final status with the official DBATU / college notification.
+  </div>
+</div>
+
+<script>
+// Total credits of Semester 1 to 6
+var SEM_TOTALS = [21, 23, 25, 20, 20, 19];
+
+var RULES = {
+  1: { next: "Second Year", min: 60, label: "Sem 1 and 2" },
+  2: { next: "Third Year",  min: 80, label: "Sem 1 to 4" },
+  3: { next: "Fourth Year", min: 86, label: "Sem 1 to 6" }
+};
+
+var currentYear = 0;
+var $ = function (id) { return document.getElementById(id); };
+
+function setStep(n) {
+  for (var i = 1; i <= 3; i++) $("s" + i).classList.toggle("on", i === n);
+}
+
+function selectYear(y) {
+  currentYear = y;
+  for (var i = 1; i <= 3; i++) $("y" + i).classList.toggle("active", i === y);
+
+  var r = RULES[y];
+  $("ruleBox").innerHTML = "<span>📌</span><span>For promotion to <b>" + r.next +
+    "</b>, you need at least <b>" + r.min + "%</b> of the total credits of <b>" + r.label + "</b>.</span>";
+
+  var html = "";
+  for (var s = 1; s <= y * 2; s++) {
+    html += '<div class="sem">' +
+      '<div class="tag">SEM<strong>' + s + '</strong></div>' +
+      '<div class="mid"><span>Credits earned</span>' +
+      '<input type="number" inputmode="decimal" min="0" max="' + SEM_TOTALS[s - 1] +
+      '" id="e' + s + '" placeholder="0" oninput="updateLive()"></div>' +
+      '<div class="max">/ ' + SEM_TOTALS[s - 1] + '</div></div>';
+  }
+  $("semRows").innerHTML = html;
+  $("inputCard").style.display = "block";
+  $("resultCard").style.display = "none";
+  updateLive();
+  setStep(2);
+  $("inputCard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function updateLive() {
+  var earned = 0, total = 0;
+  for (var s = 1; s <= currentYear * 2; s++) {
+    var v = parseFloat($("e" + s).value);
+    if (!isNaN(v)) earned += v;
+    total += SEM_TOTALS[s - 1];
+  }
+  $("liveEarned").textContent = earned;
+  $("liveTotal").textContent = total;
+}
+
+function showError(msg) {
+  var box = $("resultBox");
+  box.className = "result err";
+  box.innerHTML = '<div style="font-size:50px">⚠️</div><h2 class="verdict">Check your input</h2><p class="msg">' + msg + '</p>';
+  $("resultCard").style.display = "block";
+  $("resultCard").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function calculate() {
+  var r = RULES[currentYear];
+  var earned = 0, total = 0, rows = "";
+
+  for (var s = 1; s <= currentYear * 2; s++) {
+    var t = SEM_TOTALS[s - 1];
+    var e = parseFloat($("e" + s).value);
+    if (isNaN(e))        { showError("Please enter the earned credits for Semester " + s + "."); return; }
+    if (e < 0 || e > t)  { showError("Semester " + s + ": earned credits must be between 0 and " + t + "."); return; }
+    earned += e; total += t;
+    rows += "<tr><td>Semester " + s + "</td><td>" + e + " / " + t + "</td></tr>";
+  }
+
+  var percent = (earned / total) * 100;
+  var passed = percent >= r.min;
+  var needed = Math.ceil((r.min / 100) * total - 1e-9) - earned;
+  var color = passed ? "#17a34a" : "#dc2626";
+  var C = 2 * Math.PI * 62; // ring circumference
+
+  var msg = passed
+    ? "You are eligible for promotion to <b>" + r.next + "</b>. Great work, keep it up! 💪"
+    : "You need at least <b>" + r.min + "%</b> for promotion to <b>" + r.next +
+      "</b>. You are short by <b>" + needed + "</b> credit" + (needed === 1 ? "" : "s") + ".";
+
+  var box = $("resultBox");
+  box.className = "result " + (passed ? "pass" : "fail");
+  box.innerHTML =
+    '<div class="ring-wrap">' +
+      '<svg width="150" height="150" viewBox="0 0 150 150">' +
+        '<circle class="ring-bg" cx="75" cy="75" r="62" fill="none" stroke-width="14"/>' +
+        '<circle class="ring-fg" id="ring" cx="75" cy="75" r="62" fill="none" stroke="' + color +
+          '" stroke-width="14" stroke-dasharray="' + C + '" stroke-dashoffset="' + C + '"/>' +
+      '</svg>' +
+      '<div class="ring-text"><b>' + percent.toFixed(1) + '%</b><span>credits earned</span></div>' +
+    '</div>' +
+    '<h2 class="verdict">' + (passed ? "🎉 Promoted!" : "😔 Not Promoted") + '</h2>' +
+    '<p class="msg">' + msg + '</p>' +
+    '<div class="stats">' +
+      '<div class="stat"><b>' + earned + '</b><span>Earned</span></div>' +
+      '<div class="stat"><b>' + total + '</b><span>Total</span></div>' +
+      '<div class="stat"><b>' + r.min + '%</b><span>Required</span></div>' +
+    '</div>' +
+    '<div class="bar"><div class="fill" id="fill"></div>' +
+      '<div class="mark" style="left:' + r.min + '%"></div>' +
+      '<div class="mark-lbl" style="left:' + r.min + '%">Required ' + r.min + '%</div></div>' +
+    '<table class="table"><tr><th>Semester</th><th>Credits</th></tr>' + rows + '</table>';
+
+  $("resultCard").style.display = "block";
+  setStep(3);
+  $("resultCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  setTimeout(function () {
+    $("ring").style.strokeDashoffset = C * (1 - Math.min(percent, 100) / 100);
+    $("fill").style.width = Math.min(percent, 100) + "%";
+  }, 80);
+
+  if (passed) confetti();
+}
+
+function confetti() {
+  var items = ["🎉", "🎊", "✨", "⭐", "🎓"];
+  for (var i = 0; i < 28; i++) {
+    var c = document.createElement("div");
+    c.className = "confetti";
+    c.textContent = items[Math.floor(Math.random() * items.length)];
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.animationDuration = (2.5 + Math.random() * 2.5) + "s";
+    c.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(c);
+    setTimeout(function (el) { return function () { el.remove(); }; }(c), 6500);
+  }
+}
+
+function resetAll() {
+  currentYear = 0;
+  for (var i = 1; i <= 3; i++) $("y" + i).classList.remove("active");
+  $("inputCard").style.display = "none";
+  $("resultCard").style.display = "none";
+  setStep(1);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+</script>
+</body>
+</html>
